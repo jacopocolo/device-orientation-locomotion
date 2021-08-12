@@ -34,15 +34,20 @@ const camera = new THREE.PerspectiveCamera(
   1,
   1000
 );
+camera.rotation.y = Math.PI;
+
+const player = new THREE.Object3D();
+
 export let scene, controls;
 let grid, plane;
-let previewPoint;
+let previewPoint, previewLookAt;
 
 export default {
   name: "App",
   data() {
     return {
       position: new THREE.Vector3(),
+      lookAt: new THREE.Vector3(0, 1.8, 0),
       mouseDown: false,
       offset: 0,
     };
@@ -58,6 +63,10 @@ export default {
       renderer.domElement.id = "threeJsCanvas";
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x222222);
+
+      //camera.lookAt(-10, 0, -10);
+      scene.add(player);
+      player.add(camera);
 
       var hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
       hemiLight.color.setHSL(0.6, 0.75, 0.5);
@@ -97,6 +106,18 @@ export default {
       previewPoint.rotation.x = -Math.PI / 2;
       scene.add(previewPoint);
       previewPoint.visible = false;
+
+      const previewLookAtGeometry = new THREE.CircleGeometry(0.5, 8);
+      const previewLookAtMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+      });
+      previewLookAt = new THREE.Mesh(
+        previewLookAtGeometry,
+        previewLookAtMaterial
+      );
+      previewLookAt.rotation.x = -Math.PI / 2;
+      scene.add(previewLookAt);
+      previewLookAt.visible = false;
 
       const pg = new THREE.PlaneGeometry(10, 10);
       const pm = new THREE.MeshBasicMaterial({
@@ -147,8 +168,9 @@ export default {
 
       grid = new InfiniteGridHelper(1, 10, new THREE.Color(0x00ff00), 100);
       scene.add(grid);
-      camera.position.set(0, 1.8, 5);
-      plane.position.set(camera.position.x, 0, camera.position.z);
+      //camera.position.set(0, 1.8, 0);
+      player.position.set(0, 1.8, 0);
+      plane.position.set(player.position.x, 0, player.position.z);
       window.addEventListener("resize", this.onWindowResize);
       window.addEventListener("orientationchange", this.onWindowResize);
       this.onWindowResize();
@@ -192,7 +214,7 @@ export default {
     },
     setMovementRotation: function (x, y) {
       let raycaster = new THREE.Raycaster();
-      previewPoint.visible = true;
+      previewLookAt.visible = true;
       raycaster.setFromCamera(
         new THREE.Vector2(
           (x / window.innerWidth) * 2 - 1,
@@ -201,22 +223,32 @@ export default {
         camera
       );
       const intersects = raycaster.intersectObjects([plane]);
-      let rotation = intersects[0].point;
+      previewLookAt.position.set(
+        intersects[0].point.x,
+        intersects[0].point.y,
+        intersects[0].point.z
+      );
+      this.lookAt.x = intersects[0].point.x;
+      this.lookAt.z = intersects[0].point.z;
+      /*let rotation = intersects[0].point;
       var angleRadians = Math.atan2(
         rotation.z - this.position.z,
         rotation.x - this.position.x
       );
       this.offset = angleRadians;
       console.log("this.offset");
-      console.log(this.offset);
+      console.log(this.offset);*/
+      console.log(player);
     },
     moveToPosition: function () {
-      previewPoint.visible = false;
-      camera.position.set(this.position.x, 1.8, this.position.z);
+      player.position.set(this.position.x, 1.8, this.position.z);
       plane.position.set(this.position.x, 0, this.position.z);
-      controls.alphaOffset = controls.alphaOffset + this.offset;
-      console.log("controls.alphaOffset");
-      console.log(controls.alphaOffset);
+      if (previewLookAt.visible === true) {
+        player.lookAt(this.lookAt);
+        player.rotateY(Math.PI);
+      }
+      previewPoint.visible = false;
+      previewLookAt.visible = false;
     },
     handleInput: function (event) {
       event.preventDefault();
