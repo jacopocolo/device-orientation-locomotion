@@ -35,8 +35,8 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 camera.rotation.y = Math.PI;
-
 const player = new THREE.Object3D();
+let directionalLight;
 
 export let scene, controls;
 let grid, plane;
@@ -83,18 +83,21 @@ export default {
       scene.add(dirLight);
 
       const geometry = new THREE.BoxGeometry(2, 5, 2);
-      const materialGreen = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      const materialGreen = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
       const cubeGreen = new THREE.Mesh(geometry, materialGreen);
+      cubeGreen.castShadow = true;
       scene.add(cubeGreen);
       cubeGreen.position.set(10, 0, -10);
 
-      const materialRed = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const materialRed = new THREE.MeshPhongMaterial({ color: 0xff0000 });
       const cubeRed = new THREE.Mesh(geometry, materialRed);
+      cubeRed.castShadow = true;
       scene.add(cubeRed);
       cubeRed.position.set(0, 0, 20);
 
-      const materialBlue = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+      const materialBlue = new THREE.MeshPhongMaterial({ color: 0x0000ff });
       const cubeBlue = new THREE.Mesh(geometry, materialBlue);
+      cubeBlue.castShadow = true;
       scene.add(cubeBlue);
       cubeBlue.position.set(-10, 0, -10);
 
@@ -107,7 +110,7 @@ export default {
       scene.add(previewPoint);
       previewPoint.visible = false;
 
-      const previewLookAtGeometry = new THREE.CircleGeometry(0.5, 8);
+      const previewLookAtGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.01);
       const previewLookAtMaterial = new THREE.MeshBasicMaterial({
         color: 0x00ffff,
       });
@@ -115,7 +118,14 @@ export default {
         previewLookAtGeometry,
         previewLookAtMaterial
       );
-      previewLookAt.rotation.x = -Math.PI / 2;
+      previewLookAt.position.set(0, 0, 1);
+      //previewLookAt.rotation.y = Math.PI;
+      previewLookAt.updateMatrix();
+      previewLookAt.geometry.applyMatrix(previewLookAt.matrix);
+      previewLookAt.position.set(0, 0, 0);
+      previewLookAt.rotation.set(0, 0, 0);
+      previewLookAt.scale.set(1, 1, 1);
+      previewLookAt.updateMatrix();
       scene.add(previewLookAt);
       previewLookAt.visible = false;
 
@@ -163,8 +173,10 @@ export default {
       );
 
       controls = new DeviceOrientationControls(camera);
-      //controls.disconnect();
-      controls.alphaOffset = Math.PI * 2;
+      //controls.alphaOffset = Math.PI * 2;
+      directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      scene.add(directionalLight);
+      player.add(directionalLight);
 
       grid = new InfiniteGridHelper(1, 10, new THREE.Color(0x00ff00), 100);
       scene.add(grid);
@@ -223,11 +235,8 @@ export default {
         camera
       );
       const intersects = raycaster.intersectObjects([plane]);
-      previewLookAt.position.set(
-        intersects[0].point.x,
-        intersects[0].point.y,
-        intersects[0].point.z
-      );
+      previewLookAt.position.set(this.position.x, 1, this.position.z);
+      previewLookAt.lookAt(intersects[0].point.x, 1, intersects[0].point.z);
       this.lookAt.x = intersects[0].point.x;
       this.lookAt.z = intersects[0].point.z;
       /*let rotation = intersects[0].point;
@@ -238,7 +247,6 @@ export default {
       this.offset = angleRadians;
       console.log("this.offset");
       console.log(this.offset);*/
-      console.log(player);
     },
     moveToPosition: function () {
       player.position.set(this.position.x, 1.8, this.position.z);
