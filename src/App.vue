@@ -110,14 +110,53 @@ export default {
       scene.add(previewPoint);
       previewPoint.visible = false;
 
-      const previewLookAtGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.01);
-      const previewLookAtMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ffff,
-      });
-      previewLookAt = new THREE.Mesh(
-        previewLookAtGeometry,
-        previewLookAtMaterial
+      let right = new THREE.TextureLoader().load(
+        require("@/assets/textures/Side.png")
       );
+      let left = new THREE.TextureLoader().load(
+        require("@/assets/textures/Side.png")
+      );
+      let top = new THREE.TextureLoader().load(
+        require("@/assets/textures/TopBottom.png")
+      );
+      let bottom = new THREE.TextureLoader().load(
+        require("@/assets/textures/TopBottom.png")
+      );
+      let front = new THREE.TextureLoader().load(
+        require("@/assets/textures/Front.png")
+      );
+      let back = new THREE.TextureLoader().load(
+        require("@/assets/textures/Back.png"),
+        () => {
+          renderer.render(scene, camera);
+        }
+      );
+      const materials = [
+        new THREE.MeshBasicMaterial({
+          map: right,
+        }),
+        new THREE.MeshBasicMaterial({
+          map: left,
+        }),
+        new THREE.MeshBasicMaterial({
+          map: top,
+        }),
+        new THREE.MeshBasicMaterial({
+          map: bottom,
+        }),
+        new THREE.MeshBasicMaterial({
+          map: back,
+        }),
+        new THREE.MeshBasicMaterial({
+          map: front,
+        }),
+      ];
+
+      const previewLookAtGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.04);
+      /*const previewLookAtMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+      });*/
+      previewLookAt = new THREE.Mesh(previewLookAtGeometry, materials);
       previewLookAt.position.set(0, 0, 1);
       //previewLookAt.rotation.y = Math.PI;
       previewLookAt.updateMatrix();
